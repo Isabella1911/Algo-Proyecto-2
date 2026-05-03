@@ -1,0 +1,40 @@
+ALGORITMO DP_COIN_GAME(monedas)
+
+  n <- cantidad de monedas
+
+  SI no hay monedas ENTONCES
+      devolver 0
+  FIN SI
+
+  Crear una tabla dp de tamaño n x n, inicialmente llena de ceros
+
+  PARA cada posición i HACER
+      dp[i][i] <- valor de la moneda i
+  FIN PARA
+
+  PARA cada par de monedas consecutivas HACER
+      dp[i][i+1] <- la mayor de esas dos monedas
+  FIN PARA
+
+  PARA cada tamaño de intervalo desde 3 hasta n HACER
+      PARA cada posible inicio del intervalo HACER
+
+          definir i como el inicio
+          definir j como el final
+
+          Calcular que pasaria si el jugador toma la moneda izquierda.
+          En este caso, el oponente tomara una decisión que deje al jugador
+          con la menor ganancia posible después.
+
+          Calcular que pasaria si el jugador toma la moneda derecha.
+          De nuevo se considera que el oponente respondera de la forma
+          menos favorable para el jugador.
+
+          Guardar en dp[i][j] la mejor opción entre tomar izquierda o derecha.
+
+      FIN PARA
+  FIN PARA
+
+  devolver dp[0][n-1]
+
+FIN ALGORITMO
