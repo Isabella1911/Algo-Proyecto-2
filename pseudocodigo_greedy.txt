@@ -1,0 +1,38 @@
+ALGORITMO GREEDY_COIN_GAME(monedas)
+
+  izquierda <- primera posición del arreglo
+  derecha <- ultima posición del arreglo
+
+  gananciaJugador1 <- 0
+  gananciaJugador2 <- 0
+
+  turno <- jugador 1
+  historial <- lista vacia
+
+  MIENTRAS todavia queden monedas disponibles HACER
+
+      Comparar la moneda del extremo izquierdo con la moneda del extremo derecho
+
+      SI la moneda izquierda es mayor o igual ENTONCES
+          elegir la moneda izquierda
+          mover el limite izquierdo una posición hacia adelante
+      SINO
+          elegir la moneda derecha
+          mover el limite derecho una posición hacia atras
+      FIN SI
+
+      Registrar la moneda elegida en el historial
+
+      SI es turno del jugador 1 ENTONCES
+          sumar la moneda elegida a la ganancia del jugador 1
+          cambiar turno al jugador 2
+      SINO
+          sumar la moneda elegida a la ganancia del jugador 2
+          cambiar turno al jugador 1
+      FIN SI
+
+  FIN MIENTRAS
+
+  devolver la ganancia del jugador 1 y el historial de decisiones
+
+FIN ALGORITMO
