@@ -137,3 +137,32 @@ def greedy_score_vs_optimal_opponent(coins: list[int]) -> int:
             g2[i][j] = min(g1[i + 1][j], g1[i][j - 1])
 
     return g1[0][n - 1]
+
+# UTILIDADES
+
+def quality_percentage(greedy_score: int, dp_score: int) -> float:
+    """Calidad = greedy sobre optimo por 100"""
+    if dp_score == 0:
+        return 100.0
+    return (greedy_score / dp_score) * 100.0
+
+
+def timed_dp(coins):
+    """DP y tiempo"""
+    start = time.perf_counter()
+    score, _ = dp_coin_game(coins)
+    elapsed = time.perf_counter() - start
+    return score, elapsed
+
+
+def timed_greedy(coins):
+    """Greedy y tiempo"""
+    start = time.perf_counter()
+    score, _ = greedy_coin_game(coins)
+    elapsed = time.perf_counter() - start
+    return score, elapsed
+
+
+def generate_random_coins(n: int, min_val: int = 1, max_val: int = 100) -> list[int]:
+    """Genera monedas aleatorias"""
+    return [random.randint(min_val, max_val) for _ in range(n)]
