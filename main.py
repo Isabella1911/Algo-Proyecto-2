@@ -166,3 +166,93 @@ def timed_greedy(coins):
 def generate_random_coins(n: int, min_val: int = 1, max_val: int = 100) -> list[int]:
     """Genera monedas aleatorias"""
     return [random.randint(min_val, max_val) for _ in range(n)]
+
+
+# CASOS DE PRUEBA MANUALES
+
+def run_manual_tests():
+    """
+    Ejecuta pruebas manuales
+    """
+    test_cases = [
+        {
+            "name": "Contraejemplo clasico greedy falla",
+            "coins": [8, 15, 3, 7],
+            "expected_dp": 22,
+            "note": "DP toma 7 y luego 15 = 22. Greedy toma 8 y luego 7 = 15"
+        },
+        {
+            "name": "Greedy falla visible",
+            "coins": [2, 3, 15, 7],
+            "expected_dp": 17,
+            "note": "DP garantiza 17. Greedy toma 7 y queda con 10"
+        },
+        {
+            "name": "Caso clasico 4 monedas",
+            "coins": [20, 30, 2, 2],
+            "expected_dp": 32,
+            "note": "DP toma 20 y luego 2 o 30 y 2 = 32"
+        },
+        {
+            "name": "Contraejemplo del proyecto",
+            "coins": [3, 9, 1, 2],
+            "expected_dp": 11,
+            "note": "DP toma 2 y luego 9 = 11. Greedy toma 3 y queda 5"
+        },
+        {
+            "name": "Monedas iguales",
+            "coins": [5, 5, 5, 5],
+            "expected_dp": 10,
+            "note": "Todos iguales y ambos obtienen 10"
+        },
+        {
+            "name": "Una sola moneda",
+            "coins": [42],
+            "expected_dp": 42,
+            "note": "J1 toma la unica moneda"
+        },
+        {
+            "name": "Dos monedas",
+            "coins": [10, 20],
+            "expected_dp": 20,
+            "note": "J1 toma la mayor 20"
+        },
+        {
+            "name": "Caso grande manual",
+            "coins": [6, 9, 1, 2, 16, 8],
+            "expected_dp": None,    # calculado por DP
+            "note": "6 monedas y greedy difiere de DP"
+        },
+    ]
+
+    print("=" * 70)
+    print("  CASOS DE PRUEBA MANUALES")
+    print("=" * 70)
+
+    all_passed = True
+    for tc in test_cases:
+        coins = tc["coins"]
+        dp_score, _ = dp_coin_game(coins)
+        greedy_fast_score, picks = greedy_coin_game(coins)
+        greedy_score = greedy_score_vs_optimal_opponent(coins)
+        quality = quality_percentage(greedy_score, dp_score)
+
+        passed = (tc["expected_dp"] is None or dp_score == tc["expected_dp"])
+        status = "PASS" if passed else "FAIL"
+        if not passed:
+            all_passed = False
+
+        print(f"\n  [{status}] {tc['name']}")
+        print(f"    Monedas   : {coins}")
+        print(f"    DP        : {dp_score}   (esperado: {tc['expected_dp']})")
+        print(f"    Greedy*   : {greedy_score}   (calidad: {quality:.1f}%)")
+        print(f"    Greedy rapido ambos greedy: {greedy_fast_score}")
+        print(f"    Nota      : {tc['note']}")
+        # Mostrar picks del jugador 1
+        p1_picks = [f"{v}({d})" for (p, d, v) in picks if p == 1]
+        print(f"    Picks J1  : {p1_picks}")
+
+    print()
+    print("  Resultado global:", "TODOS PASARON" if all_passed else "ALGUNOS FALLARON")
+    print("=" * 70)
+    print()
