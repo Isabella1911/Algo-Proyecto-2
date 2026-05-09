@@ -256,3 +256,68 @@ def run_manual_tests():
     print("  Resultado global:", "TODOS PASARON" if all_passed else "ALGUNOS FALLARON")
     print("=" * 70)
     print()
+
+
+
+# ANALISIS EMPIRICO
+
+# Tamaños de entrada
+SIZES = [10, 20, 30, 40, 50, 100, 200, 300, 500, 750, 1000]
+REPETITIONS = 5
+RANDOM_SEED = 42
+
+def run_empirical_analysis() -> list[dict]:
+    """
+    Genera datos aleatorios y mide tiempos
+
+    Retorna lista de resultados
+    """
+    random.seed(RANDOM_SEED)
+    results = []
+
+    print("=" * 70)
+    print("  ANÁLISIS EMPÍRICO")
+    print(f"  Tamaños: {SIZES}")
+    print(f"  Repeticiones por tamaño: {REPETITIONS}")
+    print("=" * 70)
+    print(f"  {'n':>6}  {'t_dp (s)':>12}  {'t_greedy (s)':>14}  "
+          f"{'dp_score':>10}  {'greedy*':>10}  {'calidad%':>9}")
+    print("  " + "-" * 71)
+
+    for n in SIZES:
+        dp_times, greedy_times, qualities = [], [], []
+        dp_score_last = greedy_score_last = greedy_fast_last = 0
+
+        for _ in range(REPETITIONS):
+            coins = generate_random_coins(n)
+            dp_score, t_dp = timed_dp(coins)
+            greedy_fast_score, t_greedy = timed_greedy(coins)
+            greedy_score = greedy_score_vs_optimal_opponent(coins)
+            dp_times.append(t_dp)
+            greedy_times.append(t_greedy)
+            qualities.append(quality_percentage(greedy_score, dp_score))
+            dp_score_last = dp_score
+            greedy_score_last = greedy_score
+            greedy_fast_last = greedy_fast_score
+
+        avg_dp = sum(dp_times) / REPETITIONS
+        avg_greedy = sum(greedy_times) / REPETITIONS
+        avg_quality = sum(qualities) / REPETITIONS
+
+        row = {
+            "n": n,
+            "tiempo_dp": avg_dp,
+            "tiempo_greedy": avg_greedy,
+            "ganancia_dp": dp_score_last,
+            "ganancia_greedy": greedy_score_last,
+            "ganancia_greedy_fast": greedy_fast_last,
+            "calidad_porcentaje": avg_quality,
+        }
+        results.append(row)
+
+        print(f"  {n:>6}  {avg_dp:>12.6f}  {avg_greedy:>14.8f}  "
+              f"{dp_score_last:>10}  {greedy_score_last:>13}  {avg_quality:>8.2f}%")
+
+    print("=" * 70)
+    print()
+    return results
