@@ -321,3 +321,43 @@ def run_empirical_analysis() -> list[dict]:
     print("=" * 70)
     print()
     return results
+
+
+# EXPORTAR CSV
+
+def export_csv(results: list[dict], filepath: str = "resultados.csv"):
+    fieldnames = ["n", "tiempo_dp", "tiempo_greedy",
+                  "ganancia_dp", "ganancia_greedy", "ganancia_greedy_fast",
+                  "calidad_porcentaje"]
+    with open(filepath, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
+    print(f"  [CSV] Resultados exportados → {filepath}")
+
+
+# GRAFICAS
+
+COLORS = {
+    "dp":     "#2563EB",   # azul
+    "greedy": "#DC2626",   # rojo
+    "poly_dp":     "#60A5FA",
+    "poly_greedy": "#FCA5A5",
+    "quality":     "#16A34A",
+}
+
+def _poly_label(coeffs, degree):
+    """Formatea la regresion polinomial"""
+    terms = []
+    for i, c in enumerate(coeffs):
+        power = degree - i
+        if abs(c) < 1e-15:
+            continue
+        c_str = f"{c:.4e}"
+        if power == 0:
+            terms.append(c_str)
+        elif power == 1:
+            terms.append(f"{c_str}·n")
+        else:
+            terms.append(f"{c_str}·n^{power}")
+    return " + ".join(terms) if terms else "0"
