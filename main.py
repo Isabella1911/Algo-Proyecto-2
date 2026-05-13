@@ -361,3 +361,145 @@ def _poly_label(coeffs, degree):
         else:
             terms.append(f"{c_str}·n^{power}")
     return " + ".join(terms) if terms else "0"
+
+
+
+def plot_results(results: list[dict], output_dir: str = "."):
+    ns        = np.array([r["n"] for r in results])
+    t_dp      = np.array([r["tiempo_dp"]      for r in results])
+    t_greedy  = np.array([r["tiempo_greedy"]  for r in results])
+    quality   = np.array([r["calidad_porcentaje"] for r in results])
+
+    # grado de ajuste
+    deg_dp     = 2
+    deg_greedy = 1
+
+    coeffs_dp     = np.polyfit(ns, t_dp,     deg_dp)
+    coeffs_greedy = np.polyfit(ns, t_greedy, deg_greedy)
+
+    ns_smooth   = np.linspace(ns.min(), ns.max(), 500)
+    fit_dp      = np.polyval(coeffs_dp,     ns_smooth)
+    fit_greedy  = np.polyval(coeffs_greedy, ns_smooth)
+
+    # R2
+    def r2(y, y_pred):
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        return 1 - ss_res / ss_tot if ss_tot != 0 else 1.0
+
+    r2_dp     = r2(t_dp,     np.polyval(coeffs_dp,     ns))
+    r2_greedy = r2(t_greedy, np.polyval(coeffs_greedy, ns))
+
+    # figura 1
+    fig1, axes = plt.subplots(1, 2, figsize=(14, 6))
+    fig1.suptitle(
+        "Optimal Game Strategy — Tiempo de Ejecución vs Tamaño de Entrada",
+        fontsize=14, fontweight="bold", y=1.01
+    )
+
+    for ax, t_data, color, fit, coeffs, deg, r2_val, algo in [
+        (axes[0], t_dp,     COLORS["dp"],     fit_dp,     coeffs_dp,     deg_dp,
+         r2_dp,     "Programación Dinámica"),
+        (axes[1], t_greedy, COLORS["greedy"], fit_greedy, coeffs_greedy, deg_greedy,
+         r2_greedy, "Greedy"),
+    ]:
+        ax.scatter(ns, t_data, color=color, zorder=5, s=60, label="Datos empíricos")
+        ax.plot(ns_smooth, fit, color=color, linewidth=2, linestyle="--",
+                label=f"Regresión grado {deg}\n(R²={r2_val:.4f})")
+        ax.set_title(algo, fontsize=12)
+        ax.set_xlabel("n (tamaño de entrada)", fontsize=11)
+        ax.set_ylabel("Tiempo promedio (segundos)", fontsize=11)
+        ax.legend(fontsize=9)
+        ax.grid(True, linestyle="--", alpha=0.5)
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        # ecuacion
+        eq = _poly_label(coeffs, deg)
+        ax.annotate(f"y ≈ {eq}", xy=(0.03, 0.92), xycoords="axes fraction",
+                    fontsize=7.5, color=color,
+                    bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7))
+
+    fig1.tight_layout()
+    path1 = os.path.join(output_dir, "fig1_tiempos_separados.png")
+    fig1.savefig(path1, dpi=150, bbox_inches="tight")
+    print(f"  [PLOT] {path1}")
+
+    # figura 2
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    ax2.scatter(ns, t_dp,     color=COLORS["dp"],     s=60, zorder=5, label="DP (datos)")
+    ax2.scatter(ns, t_greedy, color=COLORS["greedy"], s=60, zorder=5, label="Greedy (datos)")
+    ax2.plot(ns_smooth, fit_dp,     color=COLORS["poly_dp"],
+             linewidth=2, linestyle="--", label=f"DP regresión grado {deg_dp}")
+    ax2.plot(ns_smooth, fit_greedy, color=COLORS["poly_greedy"],
+             linewidth=2, linestyle="--", label=f"Greedy regresión grado {deg_greedy}")
+    ax2.set_yscale("log")
+    ax2.set_title("Comparación DP vs Greedy — Escala logarítmica", fontsize=13, fontweight="bold")
+    ax2.set_xlabel("n (tamaño de entrada)", fontsize=11)
+    ax2.set_ylabel("Tiempo promedio (segundos) — log", fontsize=11)
+    ax2.legend(fontsize=10)
+    ax2.grid(True, which="both", linestyle="--", alpha=0.4)
+    fig2.tight_layout()
+    path2 = os.path.join(output_dir, "fig2_comparacion_log.png")
+    fig2.savefig(path2, dpi=150, bbox_inches="tight")
+    print(f"  [PLOT] {path2}")
+
+    # figura 3
+    fig3, ax3 = plt.subplots(figsize=(10, 5))
+    ax3.plot(ns, quality, color=COLORS["quality"], marker="o",
+             linewidth=2, markersize=7, label="Calidad greedy (%)")
+    ax3.axhline(100, color="gray", linestyle="--", linewidth=1, label="Óptimo (100%)")
+    ax3.fill_between(ns, quality, 100,
+                     where=(quality < 100), interpolate=True,
+                     color=COLORS["greedy"], alpha=0.15, label="Pérdida vs óptimo")
+    ax3.set_ylim(max(0, quality.min() - 5), 105)
+    ax3.set_title("Calidad de Solución Greedy vs Óptimo (DP)", fontsize=13, fontweight="bold")
+    ax3.set_xlabel("n (tamaño de entrada)", fontsize=11)
+    ax3.set_ylabel("Calidad  (ganancia_greedy / ganancia_dp) × 100", fontsize=11)
+    ax3.legend(fontsize=10)
+    ax3.grid(True, linestyle="--", alpha=0.5)
+
+    # estadisticas
+    stats_text = (f"Media: {quality.mean():.2f}%\n"
+                  f"Mín:   {quality.min():.2f}%\n"
+                  f"Máx:   {quality.max():.2f}%")
+    ax3.text(0.98, 0.05, stats_text, transform=ax3.transAxes,
+             fontsize=9, va="bottom", ha="right",
+             bbox=dict(boxstyle="round,pad=0.4", fc="white", ec="gray", alpha=0.8))
+
+    fig3.tight_layout()
+    path3 = os.path.join(output_dir, "fig3_calidad_greedy.png")
+    fig3.savefig(path3, dpi=150, bbox_inches="tight")
+    print(f"  [PLOT] {path3}")
+
+    # figura 4
+    speedup = t_dp / np.maximum(t_greedy, 1e-12)
+
+    fig4, ax4 = plt.subplots(figsize=(10, 5))
+    ax4.bar(ns, speedup, color=COLORS["dp"], alpha=0.7, width=np.diff(ns, append=ns[-1]+50)*0.6)
+    ax4.set_title("Factor de aceleración: DP / Greedy", fontsize=13, fontweight="bold")
+    ax4.set_xlabel("n (tamaño de entrada)", fontsize=11)
+    ax4.set_ylabel("Speedup (veces más rápido)", fontsize=11)
+    ax4.grid(True, axis="y", linestyle="--", alpha=0.5)
+
+    for x, y in zip(ns, speedup):
+        ax4.text(x, y + speedup.max() * 0.01, f"{y:.1f}×",
+                 ha="center", va="bottom", fontsize=8)
+
+    fig4.tight_layout()
+    path4 = os.path.join(output_dir, "fig4_speedup.png")
+    fig4.savefig(path4, dpi=150, bbox_inches="tight")
+    print(f"  [PLOT] {path4}")
+
+    plt.close("all")
+
+    # resumen
+    print()
+    print("  REGRESIONES POLINOMIALES")
+    print(f"  DP  (grado {deg_dp}): R² = {r2_dp:.6f}")
+    print(f"    Ecuación: y ≈ {_poly_label(coeffs_dp, deg_dp)}")
+    print(f"  Greedy (grado {deg_greedy}): R² = {r2_greedy:.6f}")
+    print(f"    Ecuación: y ≈ {_poly_label(coeffs_greedy, deg_greedy)}")
+    print()
+
+
+
