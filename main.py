@@ -138,6 +138,7 @@ def greedy_score_vs_optimal_opponent(coins: list[int]) -> int:
 
     return g1[0][n - 1]
 
+
 # UTILIDADES
 
 def quality_percentage(greedy_score: int, dp_score: int) -> float:
@@ -258,7 +259,6 @@ def run_manual_tests():
     print()
 
 
-
 # ANALISIS EMPIRICO
 
 # Tamaños de entrada
@@ -361,7 +361,6 @@ def _poly_label(coeffs, degree):
         else:
             terms.append(f"{c_str}·n^{power}")
     return " + ".join(terms) if terms else "0"
-
 
 
 def plot_results(results: list[dict], output_dir: str = "."):
@@ -502,4 +501,60 @@ def plot_results(results: list[dict], output_dir: str = "."):
     print()
 
 
+# DEMO TABLA DP
 
+def print_dp_table(coins: list[int]):
+    """Imprime la tabla DP"""
+    n = len(coins)
+    _, dp = dp_coin_game(coins)
+
+    print("  Tabla DP — dp[i][j]:")
+    header = "       " + "".join(f"  j={j:2}" for j in range(n))
+    print(header)
+    for i in range(n):
+        row_vals = "  ".join(
+            f"{dp[i][j]:5}" if j >= i else "    -"
+            for j in range(n)
+        )
+        print(f"  i={i}: {row_vals}")
+    print()
+
+
+# ENTRADA
+
+if __name__ == "__main__":
+    OUTPUT_DIR = "."
+
+    # manuales
+    run_manual_tests()
+
+    # demo DP
+    demo_coins = [8, 15, 3, 7]
+    print("  TABLA DP contraejemplo [8, 15, 3, 7]")
+    dp_val, _ = dp_coin_game(demo_coins)
+    greedy_val, greedy_picks = greedy_coin_game(demo_coins)
+    print(f"  Monedas  : {demo_coins}")
+    print(f"  DP       : {dp_val}  |  Greedy: {greedy_val}  "
+          f"|  Calidad: {quality_percentage(greedy_val, dp_val):.1f}%")
+    print()
+    print_dp_table(demo_coins)
+
+    # analisis empirico
+    results = run_empirical_analysis()
+
+    # csv
+    csv_path = os.path.join(OUTPUT_DIR, "resultados.csv")
+    export_csv(results, csv_path)
+
+    # graficas
+    print()
+    print("  Generando gráficas...")
+    plot_results(results, OUTPUT_DIR)
+
+    print()
+    print("  ¡Listo! Archivos generados:")
+    print("    - resultados.csv")
+    print("    - fig1_tiempos_separados.png")
+    print("    - fig2_comparacion_log.png")
+    print("    - fig3_calidad_greedy.png")
+    print("    - fig4_speedup.png")
